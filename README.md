@@ -19,19 +19,11 @@
 ## ✍️ 发布内容（Sveltia CMS 后台）
 
 1. 打开内容后台 <https://YouhuiWang.github.io/personal_page/admin/>
-2. 点击 **Sign In with Token**，粘贴 GitHub 访问令牌（PAT）
+2. 点击 **Sign in with GitHub** → 在 GitHub 授权页点 **Authorize**（第一次登录）
 3. 在后台新建/编辑 **博客文章**、**作品**、**链接**、**个人信息**，点保存
 4. 保存即自动提交到 GitHub 并触发部署，约 1~2 分钟后线上生效
 
-### 生成访问令牌（一次性）
-
-GitHub → Settings → **Developer settings** → **Personal access tokens → Fine-grained tokens** → Generate new token：
-
-- Repository access：**Only select repositories** → 选 `YouhuiWang/personal_page`
-- Permissions → Repository permissions → **Contents: Read and write**
-- 生成后复制，粘贴进后台即可（令牌仅存于你浏览器的 localStorage）
-
-> 令牌泄露可随时在 GitHub 上吊销。若想升级为"点击授权"式登录（GitHub OAuth），可部署 [Sveltia CMS Authenticator](https://github.com/sveltia/sveltia-cms-auth)（Cloudflare Workers 免费版），然后在 `public/admin/config.yml` 的 backend 下加一行 `base_url` 即可。
+> 登录通过 [Sveltia CMS Authenticator](https://github.com/sveltia/sveltia-cms-auth)（Cloudflare Workers 免费版）代理 GitHub OAuth。若 OAuth 失效，后台仍可用 **Sign In with Token** 粘贴 PAT 应急（令牌生成方式：GitHub → Settings → Developer settings → Fine-grained tokens，Contents: Read and write，限本仓库）。
 
 ### 写文章须知
 
