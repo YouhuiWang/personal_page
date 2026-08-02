@@ -1,4 +1,5 @@
 ---
+import { getCollection } from 'astro:content';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import { ClientRouter } from 'astro:transitions';
@@ -14,7 +15,8 @@ const { title, description } = Astro.props;
 const lang = Astro.currentLocale ?? defaultLang;
 const siteTitle = title;
 const siteDescription = description ?? title;
-const ogImage = new URL(import.meta.env.BASE_URL + 'og.png', Astro.site).toString();
+const [profileEntry] = await getCollection('profile');
+const profile = profileEntry?.data;
 ---
 
 <!doctype html>
@@ -29,8 +31,29 @@ const ogImage = new URL(import.meta.env.BASE_URL + 'og.png', Astro.site).toStrin
     <meta property="og:type" content="website" />
     <meta property="og:title" content={siteTitle} />
     <meta property="og:description" content={siteDescription} />
-    <meta property="og:image" content={ogImage} />
     <meta name="generator" content={Astro.generator} />
+    <script is:inline>
+      // 主题初始化：首帧前写入 data-theme，避免闪烁（FOUC）
+      (function () {
+        try {
+          var stored = localStorage.getItem('theme');
+          var pref =
+            stored === 'light' || stored === 'dark' || stored === 'system'
+              ? stored
+              : 'system';
+          var resolved =
+            pref === 'system'
+              ? window.matchMedia('(prefers-color-scheme: dark)').matches
+                ? 'dark'
+                : 'light'
+              : pref;
+          document.documentElement.dataset.theme = resolved;
+          document.documentElement.dataset.themePref = pref;
+        } catch (e) {
+          document.documentElement.dataset.theme = 'light';
+        }
+      })();
+    </script>
     <ClientRouter />
     <style is:global>
       /* 页面切换过渡：柔和淡入 + 轻微上移 */
@@ -65,18 +88,50 @@ const ogImage = new URL(import.meta.env.BASE_URL + 'og.png', Astro.site).toStrin
     </style>
   </head>
   <body>
-    <!-- 背景光斑（液态玻璃光效） -->
-    <div class="bg-blob bg-blob-1" aria-hidden="true"></div>
-    <div class="bg-blob bg-blob-2" aria-hidden="true"></div>
-    <div class="bg-blob bg-blob-3" aria-hidden="true"></div>
-
-    <Header />
+    {profile && <Header profile={profile} />}
     <main>
       <slot />
     </main>
-    <Footer />
+    {profile && <Footer profile={profile} />}
 
     <script>
+      // 主题切换：事件委托 + 幂等守卫（Header 跨 View Transition 持久，避免重复监听）
+      (function () {
+        var root = document.documentElement;
+        if (root.dataset.themeBound === '1') return;
+        root.dataset.themeBound = '1';
+
+        var mq = window.matchMedia('(prefers-color-scheme: dark)');
+
+        function apply() {
+          var pref = root.dataset.themePref || 'system';
+          var resolved = pref === 'system' ? (mq.matches ? 'dark' : 'light') : pref;
+          root.dataset.theme = resolved;
+          root.dataset.themePref = pref;
+        }
+
+        document.addEventListener('click', function (e) {
+          var btn = e.target.closest('[data-theme-toggle]');
+          if (!btn) return;
+          var next =
+            root.dataset.themePref === 'light'
+              ? 'dark'
+              : root.dataset.themePref === 'dark'
+                ? 'system'
+                : 'light';
+          try {
+            localStorage.setItem('theme', next);
+          } catch (e) {}
+          apply();
+        });
+
+        mq.addEventListener('change', function () {
+          if (root.dataset.themePref === 'system') apply();
+        });
+
+        apply();
+      })();
+
       // 滚动进入动画：元素进入视口时淡入上浮
       const observer = new IntersectionObserver(
         (entries) => {

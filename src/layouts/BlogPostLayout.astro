@@ -46,8 +46,14 @@ const dateFormatter = new Intl.DateTimeFormat(lang === 'zh' ? 'zh-CN' : 'en-US',
 <style>
   .post-back {
     display: inline-block;
-    font-size: 0.95rem;
-    margin-bottom: 1rem;
-    color: var(--text-muted);
+    font-size: 0.88rem;
+    letter-spacing: 0.05em;
+    margin-bottom: 1.5rem;
+    color: var(--ink-muted);
+    transition: color 0.2s ease;
+  }
+
+  .post-back:hover {
+    color: var(--accent);
   }
 </style>

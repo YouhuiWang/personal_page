@@ -4,17 +4,18 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 import PostCard from '../../../components/PostCard.astro';
 import { ui, defaultLang } from '../../../i18n/ui';
 import { useTranslations } from '../../../i18n/utils';
-import { profile } from '../../../data/site';
 
 const lang = (Astro.currentLocale ?? defaultLang) as keyof typeof ui;
 const t = useTranslations(lang);
+
+const [profileEntry] = await getCollection('profile');
 
 const posts = (await getCollection('blog', ({ id }) => id.startsWith(`${lang}/`)))
   .filter((post) => !post.data.draft)
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 ---
 
-<BaseLayout title={`${t('blog.all')} · ${profile.name}`}>
+<BaseLayout title={`${t('blog.all')} · ${profileEntry?.data.name ?? ''}`}>
   <div class="container">
     <header class="page-header reveal">
       <h1>{t('blog.all')}</h1>
@@ -34,7 +35,7 @@ const posts = (await getCollection('blog', ({ id }) => id.startsWith(`${lang}/`)
   .post-grid {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 1rem;
+    gap: 0;
   }
 
   .empty {

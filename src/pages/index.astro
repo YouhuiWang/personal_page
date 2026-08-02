@@ -6,23 +6,27 @@ import PostCard from '../components/PostCard.astro';
 import ProjectCard from '../components/ProjectCard.astro';
 import { ui, defaultLang } from '../i18n/ui';
 import { useTranslations } from '../i18n/utils';
-import { profile, projects } from '../data/site';
 
 const lang = (Astro.currentLocale ?? defaultLang) as keyof typeof ui;
 const t = useTranslations(lang);
+
+const [profileEntry] = await getCollection('profile');
+const profile = profileEntry?.data;
 
 const recentPosts = (await getCollection('blog', ({ id }) => id.startsWith(`${lang}/`)))
   .filter((post) => !post.data.draft)
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
   .slice(0, 3);
 
-const featuredProjects = projects.slice(0, 3);
+const featuredProjects = (await getCollection('projects'))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+  .slice(0, 3);
 ---
 
-<BaseLayout title={`${profile.name} · ${t('hero.subtitle')}`} description={profile.bio[lang]}>
+<BaseLayout title={profile ? `${profile.name} · ${t('hero.subtitle')}` : t('hero.subtitle')} description={profile?.bio[lang]}>
   <section class="hero container">
     <h1 class="hero-title reveal">{t('hero.tagline')}</h1>
-    <p class="hero-bio reveal">{profile.bio[lang]}</p>
+    {profile && <p class="hero-bio reveal">{profile.bio[lang]}</p>}
     <div class="hero-actions reveal">
       <a class="btn" href={getRelativeLocaleUrl(lang, 'about')}>{t('nav.about')}</a>
       <a class="btn btn-ghost" href={getRelativeLocaleUrl(lang, 'blog')}>{t('nav.blog')}</a>
@@ -43,7 +47,7 @@ const featuredProjects = projects.slice(0, 3);
     <section class="container">
       <h2 class="section-title reveal">{t('section.projects')}</h2>
       <div class="project-grid">
-        {featuredProjects.map((project) => <ProjectCard project={project} />)}
+        {featuredProjects.map((project) => <ProjectCard project={project.data} />)}
       </div>
     </section>
   )}
@@ -51,41 +55,51 @@ const featuredProjects = projects.slice(0, 3);
 
 <style>
   .hero {
-    padding: 7rem 1.25rem 2.5rem;
+    padding: 6.5rem 0 2.5rem;
     max-width: var(--container);
-    text-align: center;
   }
 
   .hero-title {
-    font-size: 2.9rem;
-    font-weight: 700;
-    margin-bottom: 1rem;
-    background: linear-gradient(120deg, #ffffff 15%, var(--accent) 55%, var(--accent-2) 90%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    text-shadow: 0 0 40px rgba(122, 165, 255, 0.25);
+    font-family: var(--font-serif);
+    font-size: clamp(2.4rem, 6vw, 3.6rem);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+    margin-bottom: 1.25rem;
+    padding-bottom: 1.75rem;
+    position: relative;
+    color: var(--ink);
+  }
+
+  /* 陶红短线（杂志式） */
+  .hero-title::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 3.5rem;
+    height: 3px;
+    background: var(--accent);
   }
 
   .hero-bio {
-    color: var(--text-muted);
+    color: var(--ink-soft);
     font-size: 1.12rem;
-    max-width: 34rem;
-    margin: 0 auto 2.25rem;
+    max-width: 34em;
+    margin: 0 0 2.25rem;
   }
 
   .hero-actions {
     display: flex;
     gap: 0.9rem;
-    justify-content: center;
     flex-wrap: wrap;
   }
 
   .hero-scroll {
-    width: 26px;
-    height: 44px;
-    margin: 4.5rem auto 0;
-    border: 2px solid rgba(255, 255, 255, 0.22);
+    width: 24px;
+    height: 40px;
+    margin: 4.5rem 0 0;
+    border: 1.5px solid var(--hairline-strong);
     border-radius: 999px;
     position: relative;
   }
@@ -95,8 +109,8 @@ const featuredProjects = projects.slice(0, 3);
     position: absolute;
     top: 8px;
     left: 50%;
-    width: 4px;
-    height: 8px;
+    width: 3px;
+    height: 7px;
     border-radius: 2px;
     background: var(--accent);
     transform: translateX(-50%);
@@ -113,11 +127,16 @@ const featuredProjects = projects.slice(0, 3);
     }
     100% {
       opacity: 0;
-      transform: translate(-50%, 14px);
+      transform: translate(-50%, 12px);
     }
   }
 
-  .post-grid,
+  .post-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
   .project-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -130,7 +149,7 @@ const featuredProjects = projects.slice(0, 3);
     }
 
     .hero-title {
-      font-size: 2rem;
+      font-size: 2.1rem;
     }
   }
 </style>

@@ -1,0 +1,56 @@
+---
+// 浅/暗/跟随系统 三态切换按钮
+// 事件处理在 BaseLayout 的全局脚本中（事件委托 + 幂等守卫）
+---
+
+<button
+  type="button"
+  class="theme-toggle"
+  data-theme-toggle
+  aria-label="切换主题"
+  title="主题：浅色 / 暗色 / 跟随系统"
+>
+  <span class="theme-icon" data-theme-icon="light" aria-hidden="true">☀</span>
+  <span class="theme-icon" data-theme-icon="dark" aria-hidden="true">☾</span>
+  <span class="theme-icon" data-theme-icon="system" aria-hidden="true">◐</span>
+</button>
+
+<style>
+  .theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.1rem;
+    height: 2.1rem;
+    border-radius: 999px;
+    border: 1px solid var(--hairline-strong);
+    background: transparent;
+    color: var(--ink-soft);
+    font-size: 0.9rem;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition:
+      background 0.25s ease,
+      border-color 0.25s ease,
+      color 0.25s ease,
+      transform 0.2s ease;
+  }
+
+  .theme-toggle:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: var(--accent-soft);
+    transform: translateY(-1px);
+  }
+
+  /* 只显示当前偏好对应的图标（由 html[data-theme-pref] 驱动） */
+  .theme-icon {
+    display: none;
+  }
+
+  html[data-theme-pref='light'] [data-theme-icon='light'],
+  html[data-theme-pref='dark'] [data-theme-icon='dark'],
+  html[data-theme-pref='system'] [data-theme-icon='system'] {
+    display: inline;
+  }
+</style>

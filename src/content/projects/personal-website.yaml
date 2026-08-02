@@ -1,0 +1,9 @@
+title:
+  zh: 个人网站
+  en: Personal Website
+description:
+  zh: 基于 Astro 构建的中英双语个人网站，包含博客、作品集与导航聚合。
+  en: A bilingual personal website built with Astro, featuring blog, portfolio and links.
+url: https://github.com/YouhuiWang/personal_page
+tags: [Astro, TypeScript]
+date: 2026-07-01

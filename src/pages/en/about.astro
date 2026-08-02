@@ -1,45 +1,52 @@
 ---
+import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { ui, defaultLang } from '../../i18n/ui';
 import { useTranslations } from '../../i18n/utils';
-import { profile } from '../../data/site';
 
 const lang = (Astro.currentLocale ?? defaultLang) as keyof typeof ui;
 const t = useTranslations(lang);
+const [profileEntry] = await getCollection('profile');
+const profile = profileEntry?.data;
 ---
 
-<BaseLayout title={`${t('about.title')} · ${profile.name}`} description={profile.bio[lang]}>
+<BaseLayout
+  title={profile ? `${t('about.title')} · ${profile.name}` : t('about.title')}
+  description={profile?.bio[lang]}
+>
   <div class="container">
     <header class="page-header reveal">
       <h1>{t('about.title')}</h1>
       <p>{profile.bio[lang]}</p>
     </header>
 
-    <section class="about-section">
-      <h2 class="section-title">{lang === 'zh' ? '基本信息' : 'Basic Info'}</h2>
-      <ul class="info-list">
-        <li>
-          <span class="info-label">{lang === 'zh' ? '姓名' : 'Name'}</span>
-          <span>{profile.name}</span>
-        </li>
-        <li>
-          <span class="info-label">{lang === 'zh' ? '所在地' : 'Location'}</span>
-          <span>{profile.location}</span>
-        </li>
-        <li>
-          <span class="info-label">Email</span>
-          <span>
-            <a href={`mailto:${profile.email}`}>{profile.email}</a>
-          </span>
-        </li>
-        <li>
-          <span class="info-label">GitHub</span>
-          <span>
-            <a href={profile.github} target="_blank" rel="noopener noreferrer">{profile.github}</a>
-          </span>
-        </li>
-      </ul>
-    </section>
+    {profile && (
+      <section class="about-section">
+        <h2 class="section-title">{lang === 'zh' ? '基本信息' : 'Basic Info'}</h2>
+        <ul class="info-list">
+          <li>
+            <span class="info-label">{lang === 'zh' ? '姓名' : 'Name'}</span>
+            <span>{profile.name}</span>
+          </li>
+          <li>
+            <span class="info-label">{lang === 'zh' ? '所在地' : 'Location'}</span>
+            <span>{profile.location}</span>
+          </li>
+          <li>
+            <span class="info-label">Email</span>
+            <span>
+              <a href={`mailto:${profile.email}`}>{profile.email}</a>
+            </span>
+          </li>
+          <li>
+            <span class="info-label">GitHub</span>
+            <span>
+              <a href={profile.github} target="_blank" rel="noopener noreferrer">{profile.github}</a>
+            </span>
+          </li>
+        </ul>
+      </section>
+    )}
 
     <!-- 在此补充教育经历、工作经历、技能等内容 -->
     <section class="about-section">

@@ -1,15 +1,19 @@
 ---
+import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ProjectCard from '../components/ProjectCard.astro';
 import { ui, defaultLang } from '../i18n/ui';
 import { useTranslations } from '../i18n/utils';
-import { profile, projects } from '../data/site';
 
 const lang = (Astro.currentLocale ?? defaultLang) as keyof typeof ui;
 const t = useTranslations(lang);
+const [profileEntry] = await getCollection('profile');
+const projects = (await getCollection('projects')).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
+);
 ---
 
-<BaseLayout title={`${t('projects.title')} · ${profile.name}`}>
+<BaseLayout title={`${t('projects.title')} · ${profileEntry?.data.name ?? ''}`}>
   <div class="container">
     <header class="page-header reveal">
       <h1>{t('projects.title')}</h1>
@@ -18,7 +22,7 @@ const t = useTranslations(lang);
 
     {projects.length > 0 ? (
       <div class="project-grid">
-        {projects.map((project) => <ProjectCard project={project} />)}
+        {projects.map((project) => <ProjectCard project={project.data} />)}
       </div>
     ) : (
       <p class="empty">{lang === 'zh' ? '暂无项目展示' : 'No projects yet'}</p>

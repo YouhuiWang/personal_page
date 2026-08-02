@@ -1,5 +1,7 @@
 ---
-import type { Project } from '../data/site';
+import type { CollectionEntry } from 'astro:content';
+
+type Project = CollectionEntry<'projects'>['data'];
 
 interface Props {
   project: Project;
@@ -23,13 +25,20 @@ const lang = (Astro.currentLocale ?? 'zh') as 'zh' | 'en';
 
 <style>
   .project-card h3 {
+    font-family: var(--font-serif);
+    font-size: 1.25rem;
+    font-weight: 500;
     margin-bottom: 0.4rem;
-    font-size: 1.1rem;
   }
 
   .project-card p {
-    color: var(--text-muted);
+    color: var(--ink-muted);
     font-size: 0.95rem;
     margin: 0 0 0.75rem;
+    max-width: 34em;
+  }
+
+  .project-card:hover h3 {
+    color: var(--accent);
   }
 </style>

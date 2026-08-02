@@ -1,0 +1,114 @@
+# yaml-language-server: $schema=https://unpkg.com/@sveltia/cms/schema/sveltia-cms.json
+
+backend:
+  name: github
+  repo: YouhuiWang/personal_page
+  branch: main
+  # PAT 登录：无需额外字段
+  # 若日后升级为 OAuth 网关登录，在此加一行：
+  # base_url: https://sveltia-cms-auth.xxx.workers.dev
+
+media_folder: public/images
+public_folder: /personal_page/images
+
+i18n:
+  structure: multiple_folders
+  locales: [zh, en]
+  default_locale: zh
+
+collections:
+  - name: blog
+    label: 博客文章
+    label_singular: 文章
+    folder: src/content/blog
+    i18n: true
+    create: true
+    extension: md
+    format: yaml-frontmatter
+    slug: '{{slug}}'
+    summary: '{{title}} — {{pubDate}}'
+    fields:
+      - { label: 标题, name: title, widget: string }
+      - { label: 摘要, name: description, widget: text }
+      - { label: 发布日期, name: pubDate, widget: datetime, format: 'YYYY-MM-DD', date_format: 'YYYY-MM-DD', time_format: false }
+      - { label: 更新日期, name: updatedDate, widget: datetime, format: 'YYYY-MM-DD', date_format: 'YYYY-MM-DD', time_format: false, required: false }
+      - label: 标签
+        name: tags
+        required: false
+        widget: list
+        field: { label: 标签, name: tag, widget: string }
+      - { label: 草稿（不发布）, name: draft, widget: boolean, required: false, default: false }
+
+  - name: projects
+    label: 作品
+    label_singular: 作品
+    folder: src/content/projects
+    create: true
+    extension: yaml
+    format: yaml
+    slug: '{{slug}}'
+    summary: '{{title.zh}}'
+    fields:
+      - name: title
+        label: 标题
+        widget: object
+        fields:
+          - { label: 中文, name: zh, widget: string }
+          - { label: English, name: en, widget: string }
+      - name: description
+        label: 描述
+        widget: object
+        fields:
+          - { label: 中文, name: zh, widget: text }
+          - { label: English, name: en, widget: text }
+      - { label: 链接, name: url, widget: string }
+      - label: 标签
+        name: tags
+        required: false
+        widget: list
+        field: { label: 标签, name: tag, widget: string }
+      - { label: 日期（用于排序）, name: date, widget: datetime, format: 'YYYY-MM-DD', date_format: 'YYYY-MM-DD', time_format: false }
+
+  - name: links
+    label: 链接
+    label_singular: 链接
+    folder: src/content/links
+    create: true
+    extension: yaml
+    format: yaml
+    slug: '{{slug}}'
+    summary: '{{label}}'
+    fields:
+      - { label: 名称, name: label, widget: string }
+      - name: description
+        label: 描述
+        widget: object
+        fields:
+          - { label: 中文, name: zh, widget: text }
+          - { label: English, name: en, widget: text }
+      - { label: URL, name: url, widget: string }
+      - { label: 排序（小的在前）, name: order, widget: number, required: false, default: 0 }
+
+singletons:
+  - name: profile
+    label: 个人信息
+    file: src/content/profile/profile.yaml
+    fields:
+      - { label: 姓名, name: name, widget: string }
+      - name: bio
+        label: 简介
+        widget: object
+        fields:
+          - { label: 中文, name: zh, widget: text }
+          - { label: English, name: en, widget: text }
+      - { label: 所在地, name: location, widget: string }
+      - { label: Email, name: email, widget: string }
+      - { label: GitHub, name: github, widget: string }
+      - label: 社交链接
+        name: socials
+        widget: list
+        summary: '{{label}}'
+        fields:
+          - { label: 名称, name: label, widget: string }
+          - { label: URL, name: url, widget: string }
+          - { label: 图标, name: icon, widget: select, options: [github, mail, x, linkedin, rss] }
