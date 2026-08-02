@@ -4,9 +4,8 @@ backend:
   name: github
   repo: YouhuiWang/personal_page
   branch: main
-  # PAT 登录：无需额外字段
-  # 若日后升级为 OAuth 网关登录，在此加一行：
-  # base_url: https://sveltia-cms-auth.xxx.workers.dev
+  # OAuth 登录：Sveltia CMS Authenticator（Cloudflare Workers）
+  base_url: https://sveltia-cms-auth.wyh-sz2516001.workers.dev
 
 media_folder: public/images
 public_folder: /personal_page/images
