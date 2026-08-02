@@ -10,12 +10,12 @@ const year = new Date().getFullYear();
 
 <footer class="site-footer">
   <div class="container footer-inner">
-    <span>
+    <span class="footer-copy">
       © {year} {profile.name} · {t('footer.rights')}
     </span>
     <div class="footer-socials">
       {profile.socials.map((s) => (
-        <a href={s.url} target="_blank" rel="noopener noreferrer">{s.label}</a>
+        <a class="footer-link" href={s.url} target="_blank" rel="noopener noreferrer">{s.label}</a>
       ))}
     </div>
   </div>
@@ -23,9 +23,12 @@ const year = new Date().getFullYear();
 
 <style>
   .site-footer {
-    margin-top: 4rem;
-    border-top: 1px solid var(--border);
-    padding: 1.5rem 0;
+    margin-top: 5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(8, 12, 22, 0.4);
+    -webkit-backdrop-filter: blur(14px) saturate(150%);
+    backdrop-filter: blur(14px) saturate(150%);
+    padding: 1.75rem 0;
     color: var(--text-muted);
     font-size: 0.9rem;
   }
@@ -41,5 +44,14 @@ const year = new Date().getFullYear();
   .footer-socials {
     display: flex;
     gap: 1rem;
+  }
+
+  .footer-link {
+    color: var(--text-muted);
+    transition: color 0.25s ease;
+  }
+
+  .footer-link:hover {
+    color: var(--accent);
   }
 </style>

@@ -21,17 +21,18 @@ const featuredProjects = projects.slice(0, 3);
 
 <BaseLayout title={`${profile.name} · ${t('hero.subtitle')}`} description={profile.bio[lang]}>
   <section class="hero container">
-    <h1>{t('hero.tagline')}</h1>
-    <p class="hero-bio">{profile.bio[lang]}</p>
-    <div class="hero-actions">
+    <h1 class="hero-title reveal">{t('hero.tagline')}</h1>
+    <p class="hero-bio reveal">{profile.bio[lang]}</p>
+    <div class="hero-actions reveal">
       <a class="btn" href={getRelativeLocaleUrl(lang, 'about')}>{t('nav.about')}</a>
       <a class="btn btn-ghost" href={getRelativeLocaleUrl(lang, 'blog')}>{t('nav.blog')}</a>
     </div>
+    <div class="hero-scroll" aria-hidden="true"></div>
   </section>
 
   {recentPosts.length > 0 && (
     <section class="container">
-      <h2 class="section-title">{t('section.latestPosts')}</h2>
+      <h2 class="section-title reveal">{t('section.latestPosts')}</h2>
       <div class="post-grid">
         {recentPosts.map((post) => <PostCard entry={post} />)}
       </div>
@@ -40,7 +41,7 @@ const featuredProjects = projects.slice(0, 3);
 
   {featuredProjects.length > 0 && (
     <section class="container">
-      <h2 class="section-title">{t('section.projects')}</h2>
+      <h2 class="section-title reveal">{t('section.projects')}</h2>
       <div class="project-grid">
         {featuredProjects.map((project) => <ProjectCard project={project} />)}
       </div>
@@ -50,55 +51,86 @@ const featuredProjects = projects.slice(0, 3);
 
 <style>
   .hero {
-    padding: 4.5rem 1.25rem 1.5rem;
+    padding: 7rem 1.25rem 2.5rem;
     max-width: var(--container);
     text-align: center;
   }
 
-  .hero h1 {
-    font-size: 2.4rem;
-    margin-bottom: 0.75rem;
+  .hero-title {
+    font-size: 2.9rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    background: linear-gradient(120deg, #ffffff 15%, var(--accent) 55%, var(--accent-2) 90%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 0 0 40px rgba(122, 165, 255, 0.25);
   }
 
   .hero-bio {
     color: var(--text-muted);
-    font-size: 1.1rem;
-    max-width: 32rem;
-    margin: 0 auto 1.75rem;
+    font-size: 1.12rem;
+    max-width: 34rem;
+    margin: 0 auto 2.25rem;
   }
 
   .hero-actions {
     display: flex;
-    gap: 0.75rem;
+    gap: 0.9rem;
     justify-content: center;
     flex-wrap: wrap;
   }
 
-  .btn-ghost {
-    border-color: var(--border);
-    color: var(--text);
+  .hero-scroll {
+    width: 26px;
+    height: 44px;
+    margin: 4.5rem auto 0;
+    border: 2px solid rgba(255, 255, 255, 0.22);
+    border-radius: 999px;
+    position: relative;
   }
 
-  .btn-ghost:hover {
-    background: var(--bg-alt);
-    color: var(--text);
-    border-color: var(--text-muted);
+  .hero-scroll::after {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    width: 4px;
+    height: 8px;
+    border-radius: 2px;
+    background: var(--accent);
+    transform: translateX(-50%);
+    animation: scroll-hint 2s ease-in-out infinite;
+  }
+
+  @keyframes scroll-hint {
+    0% {
+      opacity: 0;
+      transform: translate(-50%, 0);
+    }
+    40% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: translate(-50%, 14px);
+    }
   }
 
   .post-grid,
   .project-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1rem;
+    gap: 1.1rem;
   }
 
   @media (max-width: 640px) {
     .hero {
-      padding-top: 3rem;
+      padding-top: 4.5rem;
     }
 
-    .hero h1 {
-      font-size: 1.8rem;
+    .hero-title {
+      font-size: 2rem;
     }
   }
 </style>

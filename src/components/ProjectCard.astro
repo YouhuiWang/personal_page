@@ -9,7 +9,7 @@ const { project } = Astro.props;
 const lang = (Astro.currentLocale ?? 'zh') as 'zh' | 'en';
 ---
 
-<a class="card project-card" href={project.url} target="_blank" rel="noopener noreferrer">
+<a class="card project-card reveal" href={project.url} target="_blank" rel="noopener noreferrer">
   <h3>{project.title[lang]}</h3>
   <p>{project.description[lang]}</p>
   {project.tags && (
