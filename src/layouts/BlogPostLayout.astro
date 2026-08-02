@@ -1,0 +1,53 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import BaseLayout from './BaseLayout.astro';
+import { ui } from '../i18n/ui';
+import { useTranslations } from '../i18n/utils';
+
+interface Props {
+  entry: CollectionEntry<'blog'>;
+}
+
+const { entry } = Astro.props;
+const lang = (Astro.currentLocale ?? 'zh') as keyof typeof ui;
+const t = useTranslations(lang);
+const { title, description, pubDate, updatedDate, tags } = entry.data;
+const backUrl = getRelativeLocaleUrl(lang, 'blog');
+const dateFormatter = new Intl.DateTimeFormat(lang === 'zh' ? 'zh-CN' : 'en-US', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+});
+---
+
+<BaseLayout title={title} description={description}>
+  <article class="container prose">
+    <a class="post-back" href={backUrl}>← {t('blog.back')}</a>
+    <h1>{title}</h1>
+    <div class="post-meta">
+      <time datetime={pubDate.toISOString()}>{dateFormatter.format(pubDate)}</time>
+      {updatedDate && (
+        <span>
+          {lang === 'zh' ? '更新于 ' : 'Updated '}
+          <time datetime={updatedDate.toISOString()}>{dateFormatter.format(updatedDate)}</time>
+        </span>
+      )}
+      <span>
+        {tags?.map((tag) => (
+          <span class="tag">{tag}</span>
+        ))}
+      </span>
+    </div>
+    <slot />
+  </article>
+</BaseLayout>
+
+<style>
+  .post-back {
+    display: inline-block;
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
+    color: var(--text-muted);
+  }
+</style>

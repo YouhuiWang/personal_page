@@ -1,0 +1,35 @@
+---
+import type { Project } from '../data/site';
+
+interface Props {
+  project: Project;
+}
+
+const { project } = Astro.props;
+const lang = (Astro.currentLocale ?? 'zh') as 'zh' | 'en';
+---
+
+<a class="card project-card" href={project.url} target="_blank" rel="noopener noreferrer">
+  <h3>{project.title[lang]}</h3>
+  <p>{project.description[lang]}</p>
+  {project.tags && (
+    <div>
+      {project.tags.map((tag) => (
+        <span class="tag">{tag}</span>
+      ))}
+    </div>
+  )}
+</a>
+
+<style>
+  .project-card h3 {
+    margin-bottom: 0.4rem;
+    font-size: 1.1rem;
+  }
+
+  .project-card p {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    margin: 0 0 0.75rem;
+  }
+</style>

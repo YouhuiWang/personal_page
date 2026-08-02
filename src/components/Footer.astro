@@ -1,0 +1,45 @@
+---
+import { ui, defaultLang } from '../i18n/ui';
+import { useTranslations } from '../i18n/utils';
+import { profile } from '../data/site';
+
+const lang = (Astro.currentLocale ?? defaultLang) as keyof typeof ui;
+const t = useTranslations(lang);
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <span>
+      © {year} {profile.name} · {t('footer.rights')}
+    </span>
+    <div class="footer-socials">
+      {profile.socials.map((s) => (
+        <a href={s.url} target="_blank" rel="noopener noreferrer">{s.label}</a>
+      ))}
+    </div>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    margin-top: 4rem;
+    border-top: 1px solid var(--border);
+    padding: 1.5rem 0;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+  }
+
+  .footer-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .footer-socials {
+    display: flex;
+    gap: 1rem;
+  }
+</style>

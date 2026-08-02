@@ -1,0 +1,38 @@
+---
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import { ui, languages, defaultLang } from '../i18n/ui';
+
+const lang = (Astro.currentLocale ?? defaultLang) as keyof typeof ui;
+
+// 当前路径（剥离 base 与 locale 前缀），用于保持切换时停留在当前页面
+// 例如 /personal_page/en/blog/hello-world → blog/hello-world
+const baseStripped = Astro.url.pathname.replace(import.meta.env.BASE_URL, '/');
+const rawPath =
+  lang === defaultLang
+    ? baseStripped
+    : baseStripped.replace(new RegExp(`^/${lang}`, ''), '');
+
+const otherLang = (lang === 'zh' ? 'en' : 'zh') as keyof typeof ui;
+const targetPath = rawPath === '' ? '' : rawPath.replace(/\/$/, '');
+const otherUrl = getRelativeLocaleUrl(otherLang, targetPath);
+---
+
+<a class="lang-switch" href={otherUrl} aria-label={languages[otherLang]}>{languages[otherLang]}</a>
+
+<style>
+  .lang-switch {
+    font-size: 0.85rem;
+    padding: 0.2rem 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .lang-switch:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+    text-decoration: none;
+  }
+</style>

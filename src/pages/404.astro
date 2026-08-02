@@ -1,0 +1,35 @@
+---
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { defaultLang } from '../i18n/ui';
+
+const lang = Astro.currentLocale ?? defaultLang;
+const homeUrl = getRelativeLocaleUrl(lang, '');
+const isZh = lang === 'zh';
+---
+
+<BaseLayout title={isZh ? '页面未找到' : 'Page Not Found'}>
+  <div class="container notfound">
+    <h1 class="code">404</h1>
+    <p>{isZh ? '抱歉，你访问的页面不存在。' : 'Sorry, the page you are looking for does not exist.'}</p>
+    <a class="btn" href={homeUrl}>{isZh ? '返回首页' : 'Back to home'}</a>
+  </div>
+</BaseLayout>
+
+<style>
+  .notfound {
+    text-align: center;
+    padding: 5rem 1.25rem;
+  }
+
+  .code {
+    font-size: 5rem;
+    margin-bottom: 0.5rem;
+    color: var(--accent);
+  }
+
+  .notfound p {
+    color: var(--text-muted);
+    margin-bottom: 1.75rem;
+  }
+</style>

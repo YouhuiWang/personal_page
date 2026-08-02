@@ -1,0 +1,31 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import LinkItem from '../components/LinkItem.astro';
+import { ui, defaultLang } from '../i18n/ui';
+import { useTranslations } from '../i18n/utils';
+import { profile, links } from '../data/site';
+
+const lang = (Astro.currentLocale ?? defaultLang) as keyof typeof ui;
+const t = useTranslations(lang);
+---
+
+<BaseLayout title={`${t('links.title')} · ${profile.name}`} description={t('links.desc')}>
+  <div class="container">
+    <header class="page-header">
+      <h1>{t('links.title')}</h1>
+      <p>{t('links.desc')}</p>
+    </header>
+
+    <div class="link-list">
+      {links.map((item) => <LinkItem item={item} />)}
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .link-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+</style>

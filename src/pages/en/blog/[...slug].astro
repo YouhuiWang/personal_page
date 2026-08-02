@@ -1,0 +1,24 @@
+---
+import { getCollection, render } from 'astro:content';
+import type { CollectionEntry } from 'astro:content';
+import BlogPostLayout from '../../../layouts/BlogPostLayout.astro';
+
+export async function getStaticPaths() {
+  const locale = 'en';
+  const entries = await getCollection('blog');
+  return entries
+    .filter(({ id }) => id.startsWith(`${locale}/`))
+    .filter(({ data }) => !data.draft)
+    .map((entry) => ({
+      params: { slug: entry.id.replace(new RegExp(`^${locale}/`), '') },
+      props: { entry },
+    }));
+}
+
+const { entry } = Astro.props as { entry: CollectionEntry<'blog'> };
+const { Content } = await render(entry);
+---
+
+<BlogPostLayout entry={entry}>
+  <Content />
+</BlogPostLayout>

@@ -1,0 +1,43 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostCard from '../../components/PostCard.astro';
+import { ui, defaultLang } from '../../i18n/ui';
+import { useTranslations } from '../../i18n/utils';
+import { profile } from '../../data/site';
+
+const lang = (Astro.currentLocale ?? defaultLang) as keyof typeof ui;
+const t = useTranslations(lang);
+
+const posts = (await getCollection('blog', ({ id }) => id.startsWith(`${lang}/`)))
+  .filter((post) => !post.data.draft)
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+---
+
+<BaseLayout title={`${t('blog.all')} · ${profile.name}`}>
+  <div class="container">
+    <header class="page-header">
+      <h1>{t('blog.all')}</h1>
+    </header>
+
+    {posts.length > 0 ? (
+      <div class="post-grid">
+        {posts.map((post) => <PostCard entry={post} />)}
+      </div>
+    ) : (
+      <p class="empty">{t('blog.empty')}</p>
+    )}
+  </div>
+</BaseLayout>
+
+<style>
+  .post-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .empty {
+    color: var(--text-muted);
+  }
+</style>
