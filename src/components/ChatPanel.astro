@@ -1,0 +1,655 @@
+---
+import { ui, defaultLang } from '../i18n/ui';
+import { useTranslations } from '../i18n/utils';
+import { CHAT_ENDPOINT, FALLBACK_MODELS, EFFORTS } from '../lib/chat-config';
+
+const lang = (Astro.currentLocale ?? defaultLang) as keyof typeof ui;
+const t = useTranslations(lang);
+
+// 注入脚本的当前语言文案
+const chatUI = {
+  send: t('chat.send'),
+  stop: t('chat.stop'),
+  placeholder: t('chat.placeholder'),
+  reasoning: t('chat.reasoning'),
+  emptyTip: t('chat.emptyTip'),
+  usage: t('chat.usage'),
+  stopped: t('chat.stopped'),
+  error404: t('chat.error.404'),
+  error401: t('chat.error.401'),
+  error402: t('chat.error.402'),
+  error429: t('chat.error.429'),
+  error500: t('chat.error.500'),
+  errorNetwork: t('chat.error.network'),
+  errorUnknown: t('chat.error.unknown'),
+};
+---
+
+<div class="chat" data-chat>
+  <!-- 工具栏 -->
+  <div class="chat-toolbar">
+    <label class="chat-field">
+      <span class="chat-field-label">{t('chat.model')}</span>
+      <select class="chat-select" data-chat-model>
+        {FALLBACK_MODELS.map((m) => <option value={m}>{m}</option>)}
+      </select>
+    </label>
+    <label class="chat-field">
+      <span class="chat-field-label">{t('chat.thinking')}</span>
+      <select class="chat-select" data-chat-effort>
+        {EFFORTS.map((e) => <option value={e}>{t(`chat.think.${e}`)}</option>)}
+      </select>
+    </label>
+    <button type="button" class="chat-clear" data-chat-clear>{t('chat.clear')}</button>
+  </div>
+
+  <!-- 消息区 -->
+  <div class="chat-messages" data-chat-messages>
+    <div class="chat-empty" data-chat-empty>
+      <p>{t('chat.emptyTip')}</p>
+      <div class="chat-suggestions">
+        <button type="button" class="chat-chip" data-chat-chip>
+          {lang === 'zh' ? '用一句话介绍你自己' : 'Introduce yourself in one line'}
+        </button>
+        <button type="button" class="chat-chip" data-chat-chip>
+          {lang === 'zh' ? '这段代码有什么问题？' : 'What is wrong with this code?'}
+        </button>
+        <button type="button" class="chat-chip" data-chat-chip>
+          {lang === 'zh' ? '给我一个学习计划' : 'Give me a learning plan'}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 状态行 -->
+  <div class="chat-status" data-chat-status hidden></div>
+
+  <!-- 输入区 -->
+  <div class="chat-inputbar">
+    <textarea
+      class="chat-textarea"
+      data-chat-input
+      rows="1"
+      placeholder={t('chat.placeholder')}
+    ></textarea>
+    <button type="button" class="btn chat-send" data-chat-send>{t('chat.send')}</button>
+  </div>
+</div>
+
+<script is:inline define:vars={{ chatUI, chatEndpoint: CHAT_ENDPOINT, fallbackModels: FALLBACK_MODELS, chatEfforts: EFFORTS }}>
+  (() => {
+    const root = document.querySelector('[data-chat]');
+    if (!root) return;
+    const messagesEl = root.querySelector('[data-chat-messages]');
+    const emptyEl = root.querySelector('[data-chat-empty]');
+    const inputEl = root.querySelector('[data-chat-input]');
+    const sendBtn = root.querySelector('[data-chat-send]');
+    const clearBtn = root.querySelector('[data-chat-clear]');
+    const modelEl = root.querySelector('[data-chat-model]');
+    const effortEl = root.querySelector('[data-chat-effort]');
+    const statusEl = root.querySelector('[data-chat-status]');
+
+    const STORE_KEY = 'chat.history';
+    let messages = [];
+    let model = 'deepseek-v4-flash';
+    let effort = 'high';
+    let abortCtrl = null;
+    let lastUsage = null;
+
+    // ---------- 恢复偏好与历史 ----------
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
+      if (saved) {
+        if (Array.isArray(saved.messages)) messages = saved.messages.slice(-50);
+        if (saved.model) model = saved.model;
+        if (saved.effort) effort = saved.effort;
+        if (saved.usage) lastUsage = saved.usage;
+      }
+    } catch (e) {}
+    modelEl.value = model;
+    effortEl.value = effort;
+
+    function save() {
+      try {
+        localStorage.setItem(
+          STORE_KEY,
+          JSON.stringify({ model, effort, messages: messages.slice(-50), usage: lastUsage }),
+        );
+      } catch (e) {}
+    }
+
+    // ---------- 安全渲染 ----------
+    function esc(s) {
+      return s
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    // 轻量 markdown：代码围栏 / 行内码 / 粗体 / 斜体 / 链接 / 列表 / 段落
+    function md(text) {
+      let html = '';
+      const blocks = text.split(/(```[\s\S]*?```)/g);
+      for (const block of blocks) {
+        if (block.startsWith('```')) {
+          const code = block.slice(3, -3).replace(/^\w+\n/, '');
+          html += `<pre><code>${esc(code.replace(/\n$/, ''))}</code></pre>`;
+        } else {
+          html += inline(block);
+        }
+      }
+      return html;
+    }
+
+    function inline(text) {
+      let s = esc(text);
+      s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+      s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+      s = s.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+      s = s.replace(/\[([^\]]+)\]\((https?:[^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+      const lines = s.split('\n');
+      const out = [];
+      let list = null;
+      for (const line of lines) {
+        const li = line.match(/^[-*] (.+)$/);
+        if (li) {
+          if (!list) {
+            list = true;
+            out.push('<ul>');
+          }
+          out.push(`<li>${li[1]}</li>`);
+        } else {
+          if (list) {
+            list = false;
+            out.push('</ul>');
+          }
+          if (line.trim()) out.push(`<p>${line}</p>`);
+        }
+      }
+      if (list) out.push('</ul>');
+      return out.join('');
+    }
+
+    // ---------- 消息渲染 ----------
+    function clearMessages() {
+      messagesEl.querySelectorAll('.chat-msg, .chat-system').forEach((n) => n.remove());
+      emptyEl.hidden = true;
+    }
+
+    function renderAll() {
+      clearMessages();
+      for (const m of messages) {
+        if (m.role === 'system') {
+          addSystemMsg(m.content);
+        } else if (m.role === 'user') {
+          addMsg('user', m.content);
+        } else {
+          const node = addMsg('assistant', m.content);
+          if (m.reasoning) addReasoning(node, m.reasoning);
+          if (m.stopped) node.querySelector('.chat-body').insertAdjacentHTML('beforeend', `<span class="chat-stopped">${esc(chatUI.stopped)}</span>`);
+        }
+      }
+      scrollBottom();
+      updateStatus();
+    }
+
+    function addMsg(role, text) {
+      emptyEl.hidden = true;
+      const div = document.createElement('div');
+      div.className = `chat-msg chat-${role}`;
+      div.innerHTML = `<div class="chat-body">${md(text || '')}</div>`;
+      messagesEl.appendChild(div);
+      return div;
+    }
+
+    function addReasoning(msgNode, text) {
+      const details = document.createElement('details');
+      details.className = 'chat-reasoning';
+      details.innerHTML = `<summary>${esc(chatUI.reasoning)}</summary><div class="chat-reasoning-body"></div>`;
+      details.querySelector('.chat-reasoning-body').textContent = text || '';
+      msgNode.insertBefore(details, msgNode.querySelector('.chat-body'));
+    }
+
+    function addSystemMsg(text) {
+      const div = document.createElement('div');
+      div.className = 'chat-system';
+      div.textContent = text;
+      messagesEl.appendChild(div);
+    }
+
+    function scrollBottom() {
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function updateStatus() {
+      if (!lastUsage) {
+        statusEl.hidden = true;
+        return;
+      }
+      statusEl.textContent = chatUI.usage
+        .replace('{model}', model)
+        .replace('{tokens}', String(lastUsage));
+      statusEl.hidden = false;
+    }
+
+    // ---------- 发送 ----------
+    function send(text) {
+      const userText = text.trim();
+      if (!userText || abortCtrl) return;
+      addMsg('user', userText);
+      messages.push({ role: 'user', content: userText });
+
+      const assistantNode = addMsg('assistant', '');
+      const assistant = { role: 'assistant', content: '', reasoning: '' };
+      messages.push(assistant);
+
+      inputEl.value = '';
+      autosize();
+      setBusy(true);
+      scrollBottom();
+
+      abortCtrl = new AbortController();
+      const payload = {
+        model,
+        reasoning_effort: effort,
+        messages: messages.map((m) => ({ role: m.role, content: m.content })),
+      };
+
+      fetch(chatEndpoint + '/chat/completions', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: abortCtrl.signal,
+      })
+        .then(async (res) => {
+          if (!res.ok) {
+            throw new Error(res.status);
+          }
+          const reader = res.body.getReader();
+          const dec = new TextDecoder();
+          let buf = '';
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buf += dec.decode(value, { stream: true });
+            let nl;
+            while ((nl = buf.indexOf('\n')) >= 0) {
+              const line = buf.slice(0, nl);
+              buf = buf.slice(nl + 1);
+              if (!line.startsWith('data:')) continue;
+              const data = line.slice(5).trim();
+              if (data === '[DONE]') return;
+              let chunk;
+              try {
+                chunk = JSON.parse(data);
+              } catch (e) {
+                continue;
+              }
+              const d = chunk.choices?.[0]?.delta;
+              if (d?.reasoning_content) {
+                assistant.reasoning += d.reasoning_content;
+                syncReasoning(assistantNode, assistant.reasoning);
+              }
+              if (d?.content) {
+                assistant.content += d.content;
+                syncBody(assistantNode, assistant.content);
+                scrollBottom();
+              }
+              if (chunk.usage?.total_tokens) {
+                lastUsage = chunk.usage.total_tokens;
+              }
+            }
+          }
+        })
+        .catch((err) => {
+          if (err.name === 'AbortError') {
+            assistant.stopped = true;
+            const body = assistantNode.querySelector('.chat-body');
+            body.insertAdjacentHTML('beforeend', `<span class="chat-stopped">${esc(chatUI.stopped)}</span>`);
+          } else {
+            const code = Number(err.message);
+            const map = { 404: chatUI.error404, 401: chatUI.error401, 402: chatUI.error402, 429: chatUI.error429, 500: chatUI.error500 };
+            const text = map[code] || (code ? chatUI.errorUnknown.replace('{status}', code) : chatUI.errorNetwork);
+            assistantNode.remove();
+            messages.pop();
+            addSystemMsg(text);
+          }
+        })
+        .finally(() => {
+          abortCtrl = null;
+          setBusy(false);
+          save();
+          updateStatus();
+        });
+    }
+
+    function syncBody(node, content) {
+      node.querySelector('.chat-body').innerHTML = md(content);
+    }
+
+    function syncReasoning(node, text) {
+      let details = node.querySelector('.chat-reasoning');
+      if (!details) addReasoning(node, text);
+      else details.querySelector('.chat-reasoning-body').textContent = text;
+    }
+
+    function setBusy(busy) {
+      sendBtn.textContent = busy ? chatUI.stop : chatUI.send;
+      sendBtn.classList.toggle('chat-stop', busy);
+      inputEl.disabled = busy;
+    }
+
+    function autosize() {
+      inputEl.style.height = 'auto';
+      inputEl.style.height = Math.min(inputEl.scrollHeight, 6 * 24) + 'px';
+    }
+
+    // ---------- 事件 ----------
+    sendBtn.addEventListener('click', () => {
+      if (abortCtrl) abortCtrl.abort();
+      else send(inputEl.value);
+    });
+    inputEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        send(inputEl.value);
+      }
+    });
+    inputEl.addEventListener('input', autosize);
+    clearBtn.addEventListener('click', () => {
+      if (abortCtrl) abortCtrl.abort();
+      messages = [];
+      lastUsage = null;
+      clearMessages();
+      emptyEl.hidden = false;
+      save();
+      updateStatus();
+    });
+    modelEl.addEventListener('change', () => {
+      model = modelEl.value;
+      save();
+    });
+    effortEl.addEventListener('change', () => {
+      effort = effortEl.value;
+      save();
+    });
+    root.querySelectorAll('[data-chat-chip]').forEach((chip) => {
+      chip.addEventListener('click', () => {
+        inputEl.value = chip.textContent.trim();
+        autosize();
+        inputEl.focus();
+      });
+    });
+
+    // ---------- 初始化 ----------
+    renderAll();
+  })();
+</script>
+
+<style>
+  .chat {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--hairline);
+    background: var(--paper);
+    border-radius: var(--radius);
+    height: calc(55vh + 9rem);
+    min-height: 30rem;
+    overflow: hidden;
+  }
+
+  /* 工具栏 */
+  .chat-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 0.75rem 1.25rem;
+    border-bottom: 1px solid var(--hairline);
+    flex-wrap: wrap;
+  }
+
+  .chat-field {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .chat-field-label {
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+
+  .chat-select {
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    color: var(--ink);
+    background: var(--bg);
+    border: 1px solid var(--hairline-strong);
+    border-radius: 2px;
+    padding: 0.3rem 0.6rem;
+    cursor: pointer;
+  }
+
+  .chat-clear {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: var(--ink-muted);
+    font-size: 0.85rem;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+  }
+
+  .chat-clear:hover {
+    color: var(--accent);
+    text-decoration: underline;
+  }
+
+  /* 消息区 */
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+  }
+
+  .chat-empty {
+    margin: auto;
+    text-align: center;
+    color: var(--ink-muted);
+    max-width: 26rem;
+  }
+
+  .chat-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-top: 1rem;
+  }
+
+  .chat-chip {
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+    background: var(--bg);
+    border: 1px solid var(--hairline-strong);
+    border-radius: 999px;
+    padding: 0.35rem 0.9rem;
+    cursor: pointer;
+    transition:
+      border-color 0.2s ease,
+      color 0.2s ease;
+  }
+
+  .chat-chip:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .chat-msg {
+    max-width: 85%;
+  }
+
+  .chat-user {
+    align-self: flex-end;
+    background: var(--accent-soft);
+    border: 1px solid var(--accent-soft);
+    border-radius: var(--radius);
+    padding: 0.7rem 1rem;
+  }
+
+  .chat-user .chat-body p {
+    margin: 0;
+  }
+
+  .chat-assistant {
+    align-self: flex-start;
+    background: var(--bg);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius);
+    padding: 0.9rem 1.1rem;
+    max-width: 88%;
+  }
+
+  .chat-body p {
+    margin: 0 0 0.6em;
+  }
+
+  .chat-body p:last-child {
+    margin-bottom: 0;
+  }
+
+  .chat-body code {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    background: var(--bg-soft);
+    border: 1px solid var(--hairline);
+    padding: 0.1em 0.35em;
+    border-radius: 3px;
+  }
+
+  .chat-body pre {
+    background: var(--bg-soft);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius);
+    padding: 0.8rem;
+    overflow-x: auto;
+    margin: 0.6em 0;
+  }
+
+  .chat-body pre code {
+    background: none;
+    border: none;
+    padding: 0;
+  }
+
+  .chat-body ul {
+    margin: 0.4em 0;
+    padding-left: 1.4em;
+  }
+
+  .chat-reasoning {
+    font-size: 0.85rem;
+    margin-bottom: 0.6em;
+    border-left: 2px solid var(--accent);
+    padding-left: 0.8rem;
+  }
+
+  .chat-reasoning summary {
+    cursor: pointer;
+    color: var(--accent);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    user-select: none;
+  }
+
+  .chat-reasoning-body {
+    margin-top: 0.4rem;
+    color: var(--ink-muted);
+    font-style: italic;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .chat-system {
+    align-self: center;
+    font-size: 0.85rem;
+    color: var(--accent);
+    border: 1px solid var(--accent-soft);
+    border-radius: 999px;
+    padding: 0.3rem 1rem;
+    background: var(--accent-soft);
+  }
+
+  .chat-stopped {
+    display: inline-block;
+    margin-top: 0.4rem;
+    font-size: 0.8rem;
+    color: var(--ink-muted);
+  }
+
+  /* 状态行 */
+  .chat-status {
+    padding: 0.4rem 1.25rem;
+    font-size: 0.78rem;
+    color: var(--ink-muted);
+    border-top: 1px solid var(--hairline);
+    letter-spacing: 0.04em;
+  }
+
+  /* 输入区 */
+  .chat-inputbar {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-end;
+    padding: 0.9rem 1.25rem 1.1rem;
+    border-top: 1px solid var(--hairline);
+  }
+
+  .chat-textarea {
+    flex: 1;
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: var(--ink);
+    background: var(--bg);
+    border: 1px solid var(--hairline-strong);
+    border-radius: 2px;
+    padding: 0.6rem 0.8rem;
+    resize: none;
+    min-height: 2.6rem;
+    max-height: 9rem;
+  }
+
+  .chat-textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .chat-send {
+    flex-shrink: 0;
+  }
+
+  .chat-stop {
+    background: var(--accent-strong);
+    border-color: var(--accent-strong);
+  }
+
+  @media (max-width: 640px) {
+    .chat {
+      height: calc(60dvh + 10rem);
+      min-height: 26rem;
+    }
+
+    .chat-msg {
+      max-width: 92%;
+    }
+  }
+</style>

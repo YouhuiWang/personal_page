@@ -47,6 +47,12 @@ src/
 └── pages/                    # 页面（zh 无前缀，en 在 /en/ 下）
 ```
 
+## 🤖 AI 对话（/chat）
+
+- 站点提供 AI 对话页（/chat 与 /en/chat），支持选择模型（deepseek-v4-flash / deepseek-v4-pro）与思考深度（关闭/低/高/最大）
+- 请求经 `chat-worker/` 代理（Cloudflare Worker，`deepseek-chat-proxy`）：API key 存 Worker secret，不落浏览器；模型/思考白名单 + 每 IP 限流
+- 更换 key：`cd chat-worker && echo "新key" | npx wrangler secret put DEEPSEEK_API_KEY`
+
 ## 🔄 部署
 
 推送 `main` 分支即触发 [GitHub Actions](.github/workflows/deploy.yml) 自动构建并部署到 GitHub Pages。

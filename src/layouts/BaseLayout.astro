@@ -119,7 +119,8 @@ const profile = profileEntry?.data;
         }
 
         document.addEventListener('click', function (e) {
-          var btn = e.target.closest('[data-theme-toggle]');
+          var target = e.target instanceof Element ? e.target : null;
+          var btn = target && target.closest('[data-theme-toggle]');
           if (!btn) return;
           var cur = currentPref();
           var next = cur === 'light' ? 'dark' : cur === 'dark' ? 'system' : 'light';

@@ -1,0 +1,21 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ChatPanel from '../components/ChatPanel.astro';
+import { ui, defaultLang } from '../i18n/ui';
+import { useTranslations } from '../i18n/utils';
+
+const lang = (Astro.currentLocale ?? defaultLang) as keyof typeof ui;
+const t = useTranslations(lang);
+const [profileEntry] = await getCollection('profile');
+---
+
+<BaseLayout title={`${t('chat.title')} · ${profileEntry?.data.name ?? ''}`} description={t('chat.desc')}>
+  <div class="container">
+    <header class="page-header reveal">
+      <h1>{t('chat.title')}</h1>
+      <p>{t('chat.desc')}</p>
+    </header>
+    <ChatPanel />
+  </div>
+</BaseLayout>
