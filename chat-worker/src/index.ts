@@ -93,6 +93,7 @@ export default {
       const cfg = mergeSettings(await getSettings());
       return json(
         {
+          chatEnabled: cfg.chatEnabled,
           models: cfg.models,
           efforts: cfg.efforts,
           defaultModel: cfg.defaultModel,
@@ -110,6 +111,11 @@ export default {
     }
 
     const cfg = mergeSettings(await getSettings());
+
+    // 后台关闭 AI 对话功能
+    if (!cfg.chatEnabled) {
+      return json({ error: 'chat disabled' }, 403, origin);
+    }
 
     let body: any;
     try {

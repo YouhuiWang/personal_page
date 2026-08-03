@@ -4,6 +4,7 @@
  */
 
 export interface ChatSettings {
+  chatEnabled: boolean;
   models: string[];
   efforts: string[];
   defaultModel: string;
@@ -18,6 +19,7 @@ const SETTINGS_URL =
 const TTL_MS = 60_000;
 
 const DEFAULTS: ChatSettings = {
+  chatEnabled: true,
   models: ['deepseek-v4-flash', 'deepseek-v4-pro'],
   efforts: ['off', 'low', 'high', 'max'],
   defaultModel: 'deepseek-v4-flash',
@@ -53,6 +55,7 @@ export async function getSettings(): Promise<Partial<ChatSettings>> {
 
 export function mergeSettings(s: Partial<ChatSettings>): ChatSettings {
   return {
+    chatEnabled: typeof s.chatEnabled === 'boolean' ? s.chatEnabled : DEFAULTS.chatEnabled,
     models: Array.isArray(s.models) && s.models.length ? s.models : DEFAULTS.models,
     efforts: Array.isArray(s.efforts) && s.efforts.length ? s.efforts : DEFAULTS.efforts,
     defaultModel:

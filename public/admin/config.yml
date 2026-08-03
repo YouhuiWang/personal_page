@@ -94,6 +94,7 @@ singletons:
     file: src/content/chat-settings/settings.json
     format: json
     fields:
+      - { label: 启用 AI 对话, name: chatEnabled, widget: boolean, hint: 关闭后对话页将不可用，保存约 1 分钟内生效 }
       - label: 模型白名单
         name: models
         widget: list

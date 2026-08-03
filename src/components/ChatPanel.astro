@@ -13,6 +13,7 @@ const chatUI = {
   placeholder: t('chat.placeholder'),
   reasoning: t('chat.reasoning'),
   emptyTip: t('chat.emptyTip'),
+  disabled: t('chat.disabled'),
   usage: t('chat.usage'),
   stopped: t('chat.stopped'),
   error404: t('chat.error.404'),
@@ -415,6 +416,18 @@ const chatUI = {
         if (cfg.welcome && cfg.welcome[chatLang]) {
           const p = emptyEl.querySelector('p');
           if (p) p.textContent = cfg.welcome[chatLang];
+        }
+        // 后台关闭 AI 对话：禁用输入并提示
+        if (cfg.chatEnabled === false) {
+          root.classList.add('chat-off');
+          const p = emptyEl.querySelector('p');
+          if (p) p.textContent = chatUI.disabled;
+          emptyEl.hidden = false;
+          inputEl.disabled = true;
+          sendBtn.disabled = true;
+          clearBtn.disabled = true;
+          modelEl.disabled = true;
+          effortEl.disabled = true;
         }
       })
       .catch(() => {

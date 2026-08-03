@@ -1,4 +1,5 @@
 {
+  "chatEnabled": true,
   "models": [
     "deepseek-v4-flash",
     "deepseek-v4-pro"
