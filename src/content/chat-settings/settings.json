@@ -1,13 +1,24 @@
 {
-  "models": ["deepseek-v4-flash", "deepseek-v4-pro"],
-  "efforts": ["off", "low", "high", "max"],
+  "models": [
+    "deepseek-v4-flash",
+    "deepseek-v4-pro"
+  ],
+  "efforts": [
+    "off",
+    "low",
+    "high",
+    "max"
+  ],
   "defaultModel": "deepseek-v4-flash",
   "defaultEffort": "high",
   "maxOutputTokens": 4096,
-  "rateLimit": { "limit": 6, "periodSeconds": 60 },
+  "rateLimit": {
+    "limit": 6,
+    "periodSeconds": 60
+  },
   "welcome": {
-    "zh": "你好！我是 DeepSeek，有什么可以帮你？",
-    "en": "Hi! I'm DeepSeek. How can I help?"
+    "zh": "你好！我是 YouhuiWang 的 AI 助手，有什么可以帮你？",
+    "en": "Hi! I'm an AI assistance for YouhuiWang. How can I help?"
   },
   "apiKey": "********"
 }
