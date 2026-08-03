@@ -98,6 +98,7 @@ const profile = profileEntry?.data;
 
     <script>
       // 主题切换：事件委托 + 幂等守卫（Header 跨 View Transition 持久，避免重复监听）
+      // localStorage 是唯一数据源；html 上的 data-theme / data-theme-pref 只是渲染镜像
       (function () {
         var root = document.documentElement;
         if (root.dataset.themeBound === '1') return;
@@ -105,8 +106,13 @@ const profile = profileEntry?.data;
 
         var mq = window.matchMedia('(prefers-color-scheme: dark)');
 
+        function currentPref() {
+          var p = localStorage.getItem('theme');
+          return p === 'light' || p === 'dark' || p === 'system' ? p : 'system';
+        }
+
         function apply() {
-          var pref = root.dataset.themePref || 'system';
+          var pref = currentPref();
           var resolved = pref === 'system' ? (mq.matches ? 'dark' : 'light') : pref;
           root.dataset.theme = resolved;
           root.dataset.themePref = pref;
@@ -115,12 +121,8 @@ const profile = profileEntry?.data;
         document.addEventListener('click', function (e) {
           var btn = e.target.closest('[data-theme-toggle]');
           if (!btn) return;
-          var next =
-            root.dataset.themePref === 'light'
-              ? 'dark'
-              : root.dataset.themePref === 'dark'
-                ? 'system'
-                : 'light';
+          var cur = currentPref();
+          var next = cur === 'light' ? 'dark' : cur === 'dark' ? 'system' : 'light';
           try {
             localStorage.setItem('theme', next);
           } catch (e) {}
@@ -128,7 +130,7 @@ const profile = profileEntry?.data;
         });
 
         mq.addEventListener('change', function () {
-          if (root.dataset.themePref === 'system') apply();
+          if (currentPref() === 'system') apply();
         });
 
         apply();

@@ -27,15 +27,16 @@ const navItems = [
 const currentPath = Astro.url.pathname.replace(import.meta.env.BASE_URL, '/');
 ---
 
-<header class="site-header" data-astro-transition-persist>
+<header class="site-header">
   <div class="container header-inner">
     <a class="site-name" href={navItems[0].href}>{profile.name}</a>
     <nav class="site-nav">
       {navItems.map((item) => {
         const itemPath = item.href.replace(import.meta.env.BASE_URL, '/');
-        const active = item.key === 'nav.home'
-          ? currentPath === '/'
-          : currentPath.startsWith(itemPath + '/') || currentPath === itemPath;
+        // 统一判断：当前路径等于导航目标（含语言前缀），或以目标路径开头
+        // 例如 /en/ 命中 Home，/en/blog/hello-world/ 命中 Blog
+        const active =
+          currentPath === itemPath || currentPath.startsWith(itemPath + '/');
         return (
           <a
             href={item.href}
