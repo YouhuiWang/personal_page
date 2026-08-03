@@ -14,7 +14,7 @@
   "defaultEffort": "high",
   "maxOutputTokens": 4096,
   "rateLimit": {
-    "limit": 6,
+    "limit": 3,
     "periodSeconds": 60
   },
   "welcome": {
