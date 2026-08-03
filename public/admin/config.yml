@@ -89,6 +89,41 @@ collections:
       - { label: 排序（小的在前）, name: order, widget: number, required: false, default: 0 }
 
 singletons:
+  - name: chatSettings
+    label: AI 对话设置
+    file: src/content/chat-settings/settings.json
+    format: json
+    fields:
+      - label: 模型白名单
+        name: models
+        widget: list
+        hint: 允许在对话页选择的模型，保存后约 1 分钟内生效
+        field: { label: 模型, name: model, widget: string }
+      - label: 思考档位
+        name: efforts
+        widget: list
+        hint: 思考档位选项，off 表示关闭思考
+        field: { label: 档位, name: effort, widget: select, options: [off, low, high, max] }
+      - { label: 默认模型, name: defaultModel, widget: string, hint: 必须是上方白名单之一 }
+      - { label: 默认思考档位, name: defaultEffort, widget: select, options: [off, low, high, max] }
+      - { label: 最大输出 tokens, name: maxOutputTokens, widget: number, min: 256, max: 8192 }
+      - label: 每 IP 限流
+        name: rateLimit
+        widget: object
+        fields:
+          - { label: 窗口内最大请求数, name: limit, widget: number, min: 1 }
+          - { label: 窗口时长（秒）, name: periodSeconds, widget: number, min: 5 }
+      - label: 欢迎语
+        name: welcome
+        widget: object
+        fields:
+          - { label: 中文, name: zh, widget: text }
+          - { label: English, name: en, widget: text }
+      - label: API Key
+        name: apiKey
+        widget: apikey
+        hint: 此字段不会写入仓库（始终为掩码占位符），点击"保存到 Worker"后写入 Cloudflare KV
+
   - name: profile
     label: 个人信息
     file: src/content/profile/profile.yaml

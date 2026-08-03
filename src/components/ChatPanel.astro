@@ -76,7 +76,7 @@ const chatUI = {
   </div>
 </div>
 
-<script is:inline define:vars={{ chatUI, chatEndpoint: CHAT_ENDPOINT, fallbackModels: FALLBACK_MODELS, chatEfforts: EFFORTS }}>
+<script is:inline define:vars={{ chatUI, chatEndpoint: CHAT_ENDPOINT, fallbackModels: FALLBACK_MODELS, chatEfforts: EFFORTS, chatLang: lang }}>
   (() => {
     const root = document.querySelector('[data-chat]');
     if (!root) return;
@@ -368,10 +368,16 @@ const chatUI = {
     });
     modelEl.addEventListener('change', () => {
       model = modelEl.value;
+      try {
+        localStorage.setItem('chat.modelSet', '1');
+      } catch (e) {}
       save();
     });
     effortEl.addEventListener('change', () => {
       effort = effortEl.value;
+      try {
+        localStorage.setItem('chat.effortSet', '1');
+      } catch (e) {}
       save();
     });
     root.querySelectorAll('[data-chat-chip]').forEach((chip) => {
@@ -381,6 +387,39 @@ const chatUI = {
         inputEl.focus();
       });
     });
+
+    // ---------- 运行时配置（Worker /models，settings 驱动） ----------
+    fetch(chatEndpoint + '/models', { headers: { accept: 'application/json' } })
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((cfg) => {
+        if (Array.isArray(cfg.models) && cfg.models.length) {
+          modelEl.innerHTML = cfg.models
+            .map((m) => `<option value="${esc(m)}">${esc(m)}</option>`)
+            .join('');
+        }
+        if (Array.isArray(cfg.efforts) && cfg.efforts.length) {
+          effortEl.innerHTML = cfg.efforts
+            .map((e) => `<option value="${esc(e)}">${esc(e)}</option>`)
+            .join('');
+        }
+        // 默认值：仅当用户没有显式选择过时应用
+        if (cfg.defaultModel && !localStorage.getItem('chat.modelSet')) {
+          model = cfg.defaultModel;
+          modelEl.value = model;
+        }
+        if (cfg.defaultEffort && !localStorage.getItem('chat.effortSet')) {
+          effort = cfg.defaultEffort;
+          effortEl.value = effort;
+        }
+        // 欢迎语
+        if (cfg.welcome && cfg.welcome[chatLang]) {
+          const p = emptyEl.querySelector('p');
+          if (p) p.textContent = cfg.welcome[chatLang];
+        }
+      })
+      .catch(() => {
+        /* 保持 fallback 列表，静默 */
+      });
 
     // ---------- 初始化 ----------
     renderAll();

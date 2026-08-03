@@ -2,6 +2,10 @@ name = "deepseek-chat-proxy"
 main = "src/index.ts"
 compatibility_date = "2026-08-03"
 
+[[kv_namespaces]]
+binding = "CHAT_CONFIG"
+id = "49cfd66d026847c8ba94169def2a0a0b"
+
 [vars]
 MODEL_WHITELIST = "deepseek-v4-flash,deepseek-v4-pro"
 MAX_OUTPUT_TOKENS = "4096"

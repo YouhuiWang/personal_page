@@ -50,8 +50,23 @@ src/
 ## 🤖 AI 对话（/chat）
 
 - 站点提供 AI 对话页（/chat 与 /en/chat），支持选择模型（deepseek-v4-flash / deepseek-v4-pro）与思考深度（关闭/低/高/最大）
-- 请求经 `chat-worker/` 代理（Cloudflare Worker，`deepseek-chat-proxy`）：API key 存 Worker secret，不落浏览器；模型/思考白名单 + 每 IP 限流
-- 更换 key：`cd chat-worker && echo "新key" | npx wrangler secret put DEEPSEEK_API_KEY`
+- 请求经 `chat-worker/` 代理（Cloudflare Worker，`deepseek-chat-proxy`）：API key 存 Cloudflare KV/secret，不落浏览器；模型/思考白名单 + 每 IP 限流
+
+### 在后台管理 AI 设置
+
+后台 **/admin/** → "AI 对话设置"（singleton）可在线管理：
+
+- **模型白名单 / 思考档位 / 默认值 / 最大输出 / 限流 / 欢迎语**：保存即生效（约 1 分钟内，Worker 自动拉取），无需重新部署
+- **API Key**：在"API Key"字段输入新 key + 管理员密码，点"保存到 Worker"即写入 Cloudflare KV（不会写入仓库文件，始终为掩码）
+
+**一次性初始化**（换 key 之后全部走后台）：
+
+```bash
+cd chat-worker
+npx wrangler kv namespace create CHAT_CONFIG   # 首次，id 写入 wrangler.toml
+echo -n "管理密码" | npx wrangler secret put ADMIN_PASSWORD
+echo -n "sk-xxx" | npx wrangler secret put DEEPSEEK_API_KEY   # 兜底 key（KV 未写入前）
+```
 
 ## 🔄 部署
 

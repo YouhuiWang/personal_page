@@ -17,6 +17,10 @@ pnpm-debug.log*
 .env
 .env.production
 
+# cloudflare worker local state（chat-worker/ 在公开仓库内，防止密钥误提交）
+chat-worker/.dev.vars
+chat-worker/.wrangler/
+
 # macOS-specific files
 .DS_Store
 
