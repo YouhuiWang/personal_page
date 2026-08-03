@@ -1,14 +1,19 @@
 ---
 // 浅/暗/跟随系统 三态切换按钮
 // 事件处理在 BaseLayout 的全局脚本中（事件委托 + 幂等守卫）
+import { ui, defaultLang } from '../i18n/ui';
+import { useTranslations } from '../i18n/utils';
+
+const lang = (Astro.currentLocale ?? defaultLang) as keyof typeof ui;
+const t = useTranslations(lang);
 ---
 
 <button
   type="button"
   class="theme-toggle"
   data-theme-toggle
-  aria-label="切换主题"
-  title="主题：浅色 / 暗色 / 跟随系统"
+  aria-label={t('theme.toggle')}
+  title={t('theme.toggle')}
 >
   <span class="theme-icon" data-theme-icon="light" aria-hidden="true">☀</span>
   <span class="theme-icon" data-theme-icon="dark" aria-hidden="true">☾</span>

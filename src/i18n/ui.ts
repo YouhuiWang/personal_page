@@ -27,6 +27,7 @@ export const ui = {
     'links.title': '导航与链接',
     'links.desc': '我在各平台的足迹与常用资源',
     'common.viewAll': '查看全部',
+    'theme.toggle': '主题：浅色 / 暗色 / 跟随系统',
   },
   en: {
     'nav.home': 'Home',
@@ -49,6 +50,7 @@ export const ui = {
     'links.title': 'Links',
     'links.desc': 'My presence and useful resources',
     'common.viewAll': 'View all',
+    'theme.toggle': 'Theme: light / dark / system',
   },
 } as const;
 

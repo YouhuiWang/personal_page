@@ -9,9 +9,10 @@ interface Props {
   profile: {
     name: string;
   };
+  showLangSwitch?: boolean;
 }
 
-const { profile } = Astro.props;
+const { profile, showLangSwitch = true } = Astro.props;
 const lang = (Astro.currentLocale ?? defaultLang) as keyof typeof ui;
 const t = useTranslations(lang);
 
@@ -47,7 +48,7 @@ const currentPath = Astro.url.pathname.replace(import.meta.env.BASE_URL, '/');
       })}
     </nav>
     <ThemeToggle />
-    <LanguageSwitcher />
+    {showLangSwitch && <LanguageSwitcher />}
   </div>
 </header>
 

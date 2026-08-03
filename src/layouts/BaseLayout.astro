@@ -9,9 +9,11 @@ import { defaultLang } from '../i18n/ui';
 interface Props {
   title: string;
   description?: string;
+  /** 非 locale 页面（如 404）关闭语言切换器 */
+  showLangSwitch?: boolean;
 }
 
-const { title, description } = Astro.props;
+const { title, description, showLangSwitch = true } = Astro.props;
 const lang = Astro.currentLocale ?? defaultLang;
 const siteTitle = title;
 const siteDescription = description ?? title;
@@ -88,7 +90,7 @@ const profile = profileEntry?.data;
     </style>
   </head>
   <body>
-    {profile && <Header profile={profile} />}
+    {profile && <Header profile={profile} showLangSwitch={showLangSwitch} />}
     <main>
       <slot />
     </main>

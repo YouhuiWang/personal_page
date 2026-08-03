@@ -161,7 +161,7 @@ main {
 }
 
 .section-title::before {
-  content: '0' counter(section);
+  content: counter(section, decimal-leading-zero);
   font-family: var(--font-serif);
   font-size: 0.85rem;
   font-weight: 400;
